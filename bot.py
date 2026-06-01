@@ -4,14 +4,15 @@ import io
 import os
 from gtts import gTTS
 
-# Твой токен от BotFather
-TG_TOKEN = "8883767139:AAEpVdN2rH429LdXjaHtBSDnUOWeHTV8Oxk" # <-- УБЕДИСЬ, ЧТО ТУТ ТВОЙ ПОЛНЫЙ ТОКЕН!
+# Сервер заберет эти токены из вкладки Environment, которую мы заполнили!
+TG_TOKEN = os.getenv("TG_TOKEN")
+GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
 
 bot = telebot.TeleBot(TG_TOKEN)
 
 @bot.message_handler(commands=['start'])
 def start_message(message):
-    bot.send_message(message.chat.id, "🚬 Здорово! Я Нейро_Батя. Пиши `/нейро [твой вопрос]` и я поясню тебе за жизнь.")
+    bot.send_message(message.chat.id, "🚬 Здорово! Я Нейро_Батя. Пиши /нейро [твой вопрос] и я поясню тебе за жизнь.")
 
 @bot.message_handler(commands=['нейро'])
 def handle_neuro(message):
@@ -24,10 +25,15 @@ def handle_neuro(message):
     status_message = bot.reply_to(message, "🤖 Батя думает...")
 
     try:
+        # Стучимся на правильный бесплатный сервер GitHub ИИ
         response = requests.post(
-            "https://api.chigpt.ru/v1/chat/completions",
+            "https://models.inference.ai.azure.com/chat/completions",
+            headers={
+                "Authorization": f"Bearer {GITHUB_TOKEN}",
+                "Content-Type": "application/json"
+            },
             json={
-                "model": "meta-llama/Meta-Llama-3-70B-Instruct",
+                "model": "meta-llama-3-70b-instruct", 
                 "messages": [
                     {
                         "role": "system", 
@@ -43,6 +49,7 @@ def handle_neuro(message):
         
         if "choices" in res_json:
             answer_text = res_json["choices"][0]["message"]["content"]
+            # Убрали звездочки, чтобы Телеграм не ругался на разметку текста
             bot.edit_message_text(f"🤖 Батя выдал:\n\n{answer_text}", message.chat.id, status_message.message_id)
 
             tts = gTTS(text=answer_text, lang='ru')
@@ -51,12 +58,11 @@ def handle_neuro(message):
             audio_buffer.seek(0)
             bot.send_voice(message.chat.id, audio_buffer)
         else:
-            bot.edit_message_text("❌ Ошибка: Сервер ИИ временно устал.", message.chat.id, status_message.message_id)
+            bot.edit_message_text("❌ Ошибка сервера ИИ. Попробуй позже.", message.chat.id, status_message.message_id)
 
     except Exception as e:
         bot.edit_message_text(f"❌ Ошибка в коде: {e}", message.chat.id, status_message.message_id)
 
-# Это нужно, чтобы Render понимал, что бот жив
 if __name__ == '__main__':
     bot.polling(none_stop=True)
-  
+    
