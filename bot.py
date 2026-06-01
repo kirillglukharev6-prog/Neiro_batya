@@ -9,14 +9,14 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 BOT_TOKEN = "8883767139:AAEpVdN2rH429LdXjaHtBSDnUOWeHTV8Oxk" 
 STEOS_TOKEN = "9711b88e-af02-438f-82f0-fa4a26f2ce07"
 
-# Пробуем отправить на базовый эндпоинт tts
+# ID ГОЛОСА: 515 — Жириновский, 185 — Гоблин, 552 — Лунтик
 VOICE_ID = 515
 
 bot = telebot.TeleBot(BOT_TOKEN)
 
 @bot.message_handler(commands=['нейро'])
 def handle_neuro(message):
-    user_text = message.text.replace('/нейro', '').strip()
+    user_text = message.text.replace('/нейро', '').strip()
     
     if not user_text:
         bot.reply_to(message, "Ты забыл написать вопрос, лапоть!")
@@ -26,8 +26,8 @@ def handle_neuro(message):
 
     answer_text = f"Ну ты и спросил, конечно! Насчет '{user_text}' я тебе так скажу: хватит страдать ерундой, иди займись делом!"
 
-    # Пробуем еще один официальный вариант адреса
-    url = "https://api.voice.steos.io/v1/tts"
+    # ТОЧНЫЙ АДРЕС ДЛЯ ГЕНЕРАЦИИ БИНАРНОГО ФАЙЛА MP3
+    url = "https://public.api.voice.steos.io/api/v1/speech/synthesize-binary"
     
     headers = {
         "Authorization": STEOS_TOKEN,
@@ -47,8 +47,7 @@ def handle_neuro(message):
             audio_file.name = "voice.mp3"
             bot.send_voice(message.chat.id, audio_file, caption=answer_text)
         else:
-            # ТУТ ИЗМЕНЕНИЕ: бот пришлет развернутый текст ошибки от сервера
-            error_details = response.text[:200]  # Берем первые 200 символов ответа
+            error_details = response.text[:200]
             bot.reply_to(message, f"Ошибка {response.status_code}. Ответ сервера: {error_details}")
             
     except Exception as e:
