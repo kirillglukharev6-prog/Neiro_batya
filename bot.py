@@ -18,7 +18,9 @@ STEOS_TOKEN = "9711b88e-af02-438f-82f0-fa4a26f2ce07"
 
 # ID Фуфелшмерца
 VOICE_ID = 882
-TTS_URL = "https://public.api.voice.steos.io/api/v1/tts/tts-binary"
+
+# ОБНОВЛЕННЫЙ АДРЕС ИЗ НОВОЙ ДОКУМЕНТАЦИИ API
+TTS_URL = "https://public.api.voice.steos.io/api/v2/tts/synthesize"
 
 bot = telebot.TeleBot(BOT_TOKEN)
 last_tts_error = "Ошибок пока нет"
@@ -29,6 +31,7 @@ def synthesize_voice(text: str) -> bytes | None:
         "Authorization": STEOS_TOKEN,
         "Content-Type": "application/json"
     }
+    # В v2 API параметры передаются именно так
     payload = {
         "voice_id": VOICE_ID,
         "text": text,
