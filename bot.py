@@ -98,5 +98,6 @@ def handle_start(message):
 
 if __name__ == "__main__":
     logger.info("Бот успешно запущен!")
-    bot.infinity_polling(none_stop=True, interval=1)
+    bot.infinity_polling(none_stop=True, skip_pending=True)
+    
     
