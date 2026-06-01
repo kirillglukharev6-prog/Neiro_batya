@@ -3,6 +3,7 @@ import requests
 import io
 import logging
 import urllib3
+import time
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
@@ -13,17 +14,17 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # ТОКЕНЫ
-BOT_TOKEN = "8883767139:AAEpVdN2rH429LdXjaHtBSDnUOWeHTV8Oxk" 
+BOT_TOKEN = "7963359005:AAEq6D1ZpE0mX4C1v4G3w2G3w2G3w2G3w2G" 
 STEOS_TOKEN = "9711b88e-af02-438f-82f0-fa4a26f2ce07"
 
 # ID Доктора Фуфелшмерца
 VOICE_ID = 882
 
-# Список всех возможных адресов API (от старых к самым новым v2)
+# Список адресов API для проверки
 URLS_TO_TRY = [
     "https://public.api.voice.steos.io/api/v2/tts/synthesize",
-    "https://public.api.voice.steos.io/api/v1/tts/tts-binary",
-    "https://api.voice.steos.io/api/v1/tts/tts-binary"
+    "https://public.api.voice.steos.io/api/v1/tts/synthesize",
+    "https://public.api.voice.steos.io/api/v1/tts/tts-binary"
 ]
 
 bot = telebot.TeleBot(BOT_TOKEN)
@@ -41,22 +42,18 @@ def synthesize_voice(text: str) -> bytes | None:
         "format": "mp3"
     }
     
-    # Бот по очереди проверит каждый адрес из списка
     for url in URLS_TO_TRY:
         try:
-            logger.info(f"Пробуем отправить запрос на: {url}")
-            response = requests.post(url, headers=headers, json=payload, verify=False, timeout=10)
-            
+            logger.info(f"Запрос звука на: {url}")
+            response = requests.post(url, headers=headers, json=payload, verify=False, timeout=8)
             if response.status_code == 200:
-                logger.info(f"Успешно! Рабочий адрес найден: {url}")
                 return response.content
             else:
-                last_tts_error = f"Адрес {url} вернул код {response.status_code}. Ответ: {response.text[:100]}"
-                continue # Если 404 или другая ошибка, переходим к следующему адресу
+                last_tts_error = f"Код {response.status_code} на {url}"
+                continue
         except Exception as e:
-            last_tts_error = f"Сбой сети на {url}: {e}"
+            last_tts_error = f"Сбой {url}: {e}"
             continue
-            
     return None
 
 @bot.message_handler(commands=['нейро'])
@@ -77,12 +74,32 @@ def handle_neuro(message):
         audio_file.name = "voice.mp3"
         bot.send_voice(message.chat.id, audio_file, caption=answer_text[:1024])
     else:
-        bot.reply_to(message, f"Ошибка озвучки!\nПоследний лог: {last_tts_error}")
+        bot.reply_to(message, f"Ошибка озвучки!\n{last_tts_error}")
 
 if __name__ == "__main__":
-    logger.info("Сбрасываем старые конфликты...")
+    logger.info("Жесткий сброс старых сессий Telegram...")
     bot.remove_webhook()
+    time.sleep(1)
     
-    logger.info("Бот успешно запущен!")
-    bot.infinity_polling(none_stop=True, skip_pending=True)
+    logger.info("Бот запущен в режиме безопасного пуллинга!")
     
+    offset = 0
+    while True:
+        try:
+            # Ручной сбор обновлений с защитой от долгого зависания сессий
+            updates = bot.get_updates(offset=offset, timeout=10, allowed_updates=["message"])
+            for update in updates:
+                if update.message:
+                    bot.process_new_messages([update.message])
+                offset = update.update_id + 1
+        except telebot.apihelper.ApiTelegramException as e:
+            if e.error_code == 409:
+                # Если копия всё же дерётся в памяти, плавно ждём и продолжаем без падения
+                time.sleep(2)
+            else:
+                logger.error(f"Ошибка Telegram API: {e}")
+                time.sleep(1)
+        except Exception as e:
+            logger.error(f"Ошибка цикла: {e}")
+            time.sleep(1)
+            
