@@ -4,7 +4,7 @@ import logging
 logging.basicConfig(level=logging.INFO)
 
 # Твой токен
-TOKEN = "7963359005:AAEq6D1ZpE0mX4C1v4G3w2G3w2G3w2G3w2G"
+TOKEN = "8883767139:AAEpVdN2rH429LdXjaHtBSDnUOWeHTV8Oxk"
 bot = telebot.TeleBot(TOKEN)
 
 @bot.message_handler(commands=['start'])
