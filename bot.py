@@ -23,8 +23,8 @@ VOICE_ID = 882
 # Список адресов API для проверки
 URLS_TO_TRY = [
     "https://public.api.voice.steos.io/api/v2/tts/synthesize",
-    "https://public.api.voice.steos.io/api/v1/tts/synthesize",
-    "https://public.api.voice.steos.io/api/v1/tts/tts-binary"
+    "https://public.api.voice.steos.io/api/v2/tts/synthesize",
+    "https://public.api.voice.steos.io/api/v2/tts/tts-binary"
 ]
 
 bot = telebot.TeleBot(BOT_TOKEN)
