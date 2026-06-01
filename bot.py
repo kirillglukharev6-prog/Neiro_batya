@@ -31,7 +31,7 @@ def handle_neuro(message):
     answer_text = f"Ну ты и спросил, конечно! Насчет '{user_text}' я тебе так скажу: хватит страдать ерундой, иди займись делом!"
 
     # Настройки для отправки на сайт SteosVoice
-    url = "https://api.voice.steos.io/v1/get-tts-binary"
+    url = "https://api.voice.steos.io/v1/tts/tts-binary"
     headers = {
         "Authorization": STEOS_TOKEN,
         "Content-Type": "application/json"
