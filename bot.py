@@ -16,11 +16,11 @@ logger = logging.getLogger(__name__)
 BOT_TOKEN = "8883767139:AAEpVdN2rH429LdXjaHtBSDnUOWeHTV8Oxk" 
 STEOS_TOKEN = "9711b88e-af02-438f-82f0-fa4a26f2ce07"
 
-# ID Фуфелшмерца
+# ID Доктора Фуфелшмерца
 VOICE_ID = 882
 
-# ОБНОВЛЕННЫЙ АДРЕС ИЗ НОВОЙ ДОКУМЕНТАЦИИ API
-TTS_URL = "https://public.api.voice.steos.io/api/v2/tts/synthesize"
+# САМЫЙ НАДЕЖНЫЙ АДРЕС ИЗ КЛИЕНТСКОЙ БИБЛИОТЕКИ STEOS
+TTS_URL = "https://api.cybervoice.io/v1/tts"
 
 bot = telebot.TeleBot(BOT_TOKEN)
 last_tts_error = "Ошибок пока нет"
@@ -28,17 +28,23 @@ last_tts_error = "Ошибок пока нет"
 def synthesize_voice(text: str) -> bytes | None:
     global last_tts_error
     headers = {
-        "Authorization": STEOS_TOKEN,
+        "Authorization": f"Bearer {STEOS_TOKEN}" if "-" in STEOS_TOKEN else STEOS_TOKEN,
         "Content-Type": "application/json"
     }
-    # В v2 API параметры передаются именно так
     payload = {
         "voice_id": VOICE_ID,
         "text": text,
         "format": "mp3"
     }
     try:
+        # Пробуем отправить на главный домен cybervoice
         response = requests.post(TTS_URL, headers=headers, json=payload, verify=False, timeout=15)
+        
+        # Если вдруг основной домен выдал 404, пробуем запасной public-api
+        if response.status_code == 404:
+            alt_url = "https://public-api.cybervoice.io/api/v1/tts"
+            response = requests.post(alt_url, headers=headers, json=payload, verify=False, timeout=15)
+
         if response.status_code == 200:
             return response.content
         else:
