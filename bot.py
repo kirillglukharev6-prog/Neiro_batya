@@ -14,7 +14,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # ТОКЕНЫ
-BOT_TOKEN = "7963359005:AAEq6D1ZpE0mX4C1v4G3w2G3w2G3w2G3w2G" 
+BOT_TOKEN = "8883767139:AAEpVdN2rH429LdXjaHtBSDnUOWeHTV8Oxk" 
 STEOS_TOKEN = "9711b88e-af02-438f-82f0-fa4a26f2ce07"
 
 # ID Доктора Фуфелшмерца
