@@ -44,7 +44,7 @@ def handle_neuro(message):
 
     try:
         # Отправляем запрос на генерацию голоса
-        response = requests.post(url, headers=headers, json=payload)
+        response = requests.post(url, headers=headers, json=payload, verify=False)
         
         if response.status_code == 200:
             # Превращаем байты аудио в файл для отправки
