@@ -18,8 +18,6 @@ STEOS_TOKEN = "9711b88e-af02-438f-82f0-fa4a26f2ce07"
 
 # ID Доктора Фуфелшмерца
 VOICE_ID = 882
-
-# Точный рабочий адрес из твоего личного кабинета SteosVoice
 TTS_URL = "https://public.api.voice.steos.io/api/v1/tts/synthesize"
 
 bot = telebot.TeleBot(BOT_TOKEN)
@@ -38,7 +36,6 @@ def synthesize_voice(text: str) -> bytes | None:
     }
     try:
         response = requests.post(TTS_URL, headers=headers, json=payload, verify=False, timeout=15)
-        
         if response.status_code == 200:
             return response.content
         else:
@@ -69,6 +66,11 @@ def handle_neuro(message):
         bot.reply_to(message, f"Ошибка озвучки!\n{last_tts_error}")
 
 if __name__ == "__main__":
+    logger.info("Удаляем старые вебхуки и конфликты...")
+    # ЖЕСТКИЙ СБРОС СТАРЫХ СЕССИЙ ТЕЛЕГРАМА
+    bot.remove_webhook()
+    
     logger.info("Бот успешно запущен!")
+    # Запускаем с очисткой очереди зависших сообщений
     bot.infinity_polling(none_stop=True, skip_pending=True)
     
