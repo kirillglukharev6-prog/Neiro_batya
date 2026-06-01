@@ -6,7 +6,7 @@ import logging
 logging.basicConfig(level=logging.INFO)
 
 # ТВОЙ ТОКЕН БОТА (полученный от @BotFather)
-BOT_TOKEN = "7963359005:AAEq6D1ZpE0mX4C1v4G3w2G3w2G3w2G3w2G"
+BOT_TOKEN = "8883767139:AAEpVdN2rH429LdXjaHtBSDnUOWeHTV8Oxk"
 # ТВОЙ USER TOKEN (из личного кабинета Steos)
 STEOS_TOKEN = "9711b88e-af02-438f-82f0-fa4a26f2ce07"
 # ID голоса
