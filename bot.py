@@ -18,7 +18,7 @@ BOT_TOKEN = "8883767139:AAEpVdN2rH429LdXjaHtBSDnUOWeHTV8Oxk"
 STEOS_TOKEN = "9711b88e-af02-438f-82f0-fa4a26f2ce07"
 
 # ID голосов: 515 — Жириновский, 185 — Гоблин, 552 — Лунтик
-VOICE_ID = 515
+VOICE_ID = 882
 
 # Самый точный прямой адрес для моментального получения MP3 файла
 TTS_URL = "https://public.api.voice.steos.io/api/v1/tts/tts-binary"
