@@ -11,7 +11,7 @@ bot = telebot.TeleBot(TG_TOKEN)
 
 @bot.message_handler(commands=['start'])
 def start_message(message):
-    bot.send_message(message.chat.id, "🚬 Здорово! Я Нейро_Батя. Пиши `/нейро [твой вопрос]` и я поясню тебе за жизнь.", parse_mode='Markdown')
+    bot.send_message(message.chat.id, "🚬 Здорово! Я Нейро_Батя. Пиши `/нейро [твой вопрос]` и я поясню тебе за жизнь.")
 
 @bot.message_handler(commands=['нейро'])
 def handle_neuro(message):
@@ -43,7 +43,7 @@ def handle_neuro(message):
         
         if "choices" in res_json:
             answer_text = res_json["choices"][0]["message"]["content"]
-            bot.edit_message_text(f"🤖 **Батя выдал:**\n\n{answer_text}", message.chat.id, status_message.message_id)
+            bot.edit_message_text(f"🤖 Батя выдал:\n\n{answer_text}", message.chat.id, status_message.message_id)
 
             tts = gTTS(text=answer_text, lang='ru')
             audio_buffer = io.BytesIO()
