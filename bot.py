@@ -3,9 +3,6 @@ import requests
 import io
 import logging
 import urllib3
-import os
-from threading import Thread
-from flask import Flask
 
 # Отключаем предупреждения об SSL
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -26,22 +23,6 @@ TTS_URL = "https://public.api.voice.steos.io/api/v1/tts/synthesize"
 
 bot = telebot.TeleBot(BOT_TOKEN)
 last_tts_error = "Ошибок пока нет"
-
-# Создаем микро-сайт для Render
-app = Flask(__name__)
-
-@app.route('/')
-def home():
-    return "Бот работает, Render доволен!"
-
-def run_bot():
-    try:
-        logger.info("Удаляем старые вебхуки и сбрасываем конфликты 409...")
-        bot.remove_webhook()
-        logger.info("Запуск бесконечного опроса Телеграм...")
-        bot.infinity_polling(none_stop=True, skip_pending=True)
-    except Exception as e:
-        logger.error(f"Критическая ошибка пуллинга: {e}")
 
 def synthesize_voice(text: str) -> bytes | None:
     global last_tts_error
@@ -86,12 +67,11 @@ def handle_neuro(message):
         bot.reply_to(message, f"Ошибка озвучки!\n{last_tts_error}")
 
 if __name__ == "__main__":
-    # 1. Запускаем самого бота в отдельном фоновом потоке
-    bot_thread = Thread(target=run_bot)
-    bot_thread.daemon = True
-    bot_thread.start()
-
-    # 2. Запускаем Flask в главном потоке. Он займет порт 10000 и будет держать Render стабильным
-    logger.info("Запуск Flask на порту 10000...")
-    app.run(host='0.0.0.0', port=10000)
+    logger.info("Удаляем старые вебхуки и сбрасываем конфликты...")
+    # Сбрасываем старые привязки, чтобы убрать ошибку 409
+    bot.remove_webhook()
+    
+    logger.info("Бот успешно запущен!")
+    # Запускаем бота с автоматическим пропуском зависших сообщений
+    bot.infinity_polling(none_stop=True, skip_pending=True)
     
