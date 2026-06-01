@@ -4,7 +4,6 @@ import io
 import logging
 import urllib3
 
-# Отключаем предупреждения об SSL
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 logging.basicConfig(
@@ -17,9 +16,15 @@ logger = logging.getLogger(__name__)
 BOT_TOKEN = "8883767139:AAEpVdN2rH429LdXjaHtBSDnUOWeHTV8Oxk" 
 STEOS_TOKEN = "9711b88e-af02-438f-82f0-fa4a26f2ce07"
 
-# Настройки голоса Фуфелшмерца
+# ID Доктора Фуфелшмерца
 VOICE_ID = 882
-TTS_URL = "https://public.api.voice.steos.io/api/v1/tts/synthesize"
+
+# Список всех возможных адресов API (от старых к самым новым v2)
+URLS_TO_TRY = [
+    "https://public.api.voice.steos.io/api/v2/tts/synthesize",
+    "https://public.api.voice.steos.io/api/v1/tts/tts-binary",
+    "https://api.voice.steos.io/api/v1/tts/tts-binary"
+]
 
 bot = telebot.TeleBot(BOT_TOKEN)
 last_tts_error = "Ошибок пока нет"
@@ -35,16 +40,24 @@ def synthesize_voice(text: str) -> bytes | None:
         "text": text,
         "format": "mp3"
     }
-    try:
-        response = requests.post(TTS_URL, headers=headers, json=payload, verify=False, timeout=15)
-        if response.status_code == 200:
-            return response.content
-        else:
-            last_tts_error = f"Код: {response.status_code}, Ответ: {response.text[:150]}"
-            return None
-    except Exception as e:
-        last_tts_error = f"Сетевой сбой: {e}"
-        return None
+    
+    # Бот по очереди проверит каждый адрес из списка
+    for url in URLS_TO_TRY:
+        try:
+            logger.info(f"Пробуем отправить запрос на: {url}")
+            response = requests.post(url, headers=headers, json=payload, verify=False, timeout=10)
+            
+            if response.status_code == 200:
+                logger.info(f"Успешно! Рабочий адрес найден: {url}")
+                return response.content
+            else:
+                last_tts_error = f"Адрес {url} вернул код {response.status_code}. Ответ: {response.text[:100]}"
+                continue # Если 404 или другая ошибка, переходим к следующему адресу
+        except Exception as e:
+            last_tts_error = f"Сбой сети на {url}: {e}"
+            continue
+            
+    return None
 
 @bot.message_handler(commands=['нейро'])
 def handle_neuro(message):
@@ -64,14 +77,12 @@ def handle_neuro(message):
         audio_file.name = "voice.mp3"
         bot.send_voice(message.chat.id, audio_file, caption=answer_text[:1024])
     else:
-        bot.reply_to(message, f"Ошибка озвучки!\n{last_tts_error}")
+        bot.reply_to(message, f"Ошибка озвучки!\nПоследний лог: {last_tts_error}")
 
 if __name__ == "__main__":
-    logger.info("Удаляем старые вебхуки и сбрасываем конфликты...")
-    # Сбрасываем старые привязки, чтобы убрать ошибку 409
+    logger.info("Сбрасываем старые конфликты...")
     bot.remove_webhook()
     
     logger.info("Бот успешно запущен!")
-    # Запускаем бота с автоматическим пропуском зависших сообщений
     bot.infinity_polling(none_stop=True, skip_pending=True)
     
