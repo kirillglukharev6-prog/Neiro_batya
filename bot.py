@@ -33,7 +33,7 @@ def handle_neuro(message):
                 "Content-Type": "application/json"
             },
             json={
-                "model": "meta-llama-3-70b-instruct", 
+                "model": "gpt-4o-mini", 
                 "messages": [
                     {
                         "role": "system", 
