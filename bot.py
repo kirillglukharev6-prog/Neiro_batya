@@ -3,7 +3,10 @@ import requests
 import io
 import logging
 import urllib3
+from threading import Thread
+from flask import Flask
 
+# Отключаем предупреждения об SSL
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 logging.basicConfig(
@@ -16,12 +19,23 @@ logger = logging.getLogger(__name__)
 BOT_TOKEN = "8883767139:AAEpVdN2rH429LdXjaHtBSDnUOWeHTV8Oxk" 
 STEOS_TOKEN = "9711b88e-af02-438f-82f0-fa4a26f2ce07"
 
-# ID Доктора Фуфелшмерца
+# Настройки голоса
 VOICE_ID = 882
 TTS_URL = "https://public.api.voice.steos.io/api/v1/tts/synthesize"
 
 bot = telebot.TeleBot(BOT_TOKEN)
 last_tts_error = "Ошибок пока нет"
+
+# СОЗДАЕМ МИКРО-САЙТ ДЛЯ ОБМАНА RENDER
+app = Flask(__name__)
+
+@app.route('/')
+def home():
+    return "Бот Фуфелшмерца активен и работает!"
+
+def run_flask():
+    # Render автоматически передает порт 10000 в этот скрипт
+    app.run(host='0.0.0.0', port=10000)
 
 def synthesize_voice(text: str) -> bytes | None:
     global last_tts_error
@@ -66,11 +80,16 @@ def handle_neuro(message):
         bot.reply_to(message, f"Ошибка озвучки!\n{last_tts_error}")
 
 if __name__ == "__main__":
-    logger.info("Удаляем старые вебхуки и конфликты...")
-    # ЖЕСТКИЙ СБРОС СТАРЫХ СЕССИЙ ТЕЛЕГРАМА
+    # 1. Запускаем "сайт" в отдельном потоке, чтобы Render был доволен
+    server_thread = Thread(target=run_flask)
+    server_thread.daemon = True
+    server_thread.start()
+    logger.info("Микро-сервер Flask запущен на порту 10000")
+
+    # 2. Очищаем старые зависшие сессии Телеграма
     bot.remove_webhook()
     
+    # 3. Запускаем самого бота
     logger.info("Бот успешно запущен!")
-    # Запускаем с очисткой очереди зависших сообщений
     bot.infinity_polling(none_stop=True, skip_pending=True)
     
