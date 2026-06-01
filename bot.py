@@ -1,68 +1,66 @@
 import telebot
 import requests
+import json
 import io
-import os
-from gtts import gTTS
 
-# Сервер заберет эти токены из вкладки Environment, которую мы заполнили!
-TG_TOKEN = os.getenv("TG_TOKEN")
-GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
+# ТВОИ ТОКЕНЫ (Вставь сюда свой токен от BotFather)
+BOT_TOKEN = "8883767139:AAEpVdN2rH429LdXjaHtBSDnUOWeHTV8Oxk"
+STEOS_TOKEN = "9711b88e-af02-438f-82f0-fa4a26f2ce07"
 
-bot = telebot.TeleBot(TG_TOKEN)
+# ТУТ ВЫБИРАЙ ГОЛОС БАТИ:
+# 515 — Жириновский
+# 185 — Гоблин (Пучков)
+# 552 — Лунтик
+VOICE_ID = 515
 
-@bot.message_handler(commands=['start'])
-def start_message(message):
-    bot.send_message(message.chat.id, "🚬 Здорово! Я Нейро_Батя. Пиши /нейро [твой вопрос] и я поясню тебе за жизнь.")
+bot = telebot.TeleBot(BOT_TOKEN)
 
 @bot.message_handler(commands=['нейро'])
 def handle_neuro(message):
-    question = message.text.replace('/нейро', '').strip()
+    # Отрезаем команду /нейро, берем только текст
+    user_text = message.text.replace('/нейро', '').strip()
     
-    if not question:
-        bot.reply_to(message, "Ты че, забыл вопрос написать? Пиши: /нейро расскажи анекдот")
+    if not user_text:
+        bot.reply_to(message, "Ты забыл написать вопрос, лапоть!")
         return
 
-    status_message = bot.reply_to(message, "🤖 Батя думает...")
+    # Показываем в ТГ статус «Записывает голосовое сообщение»
+    bot.send_chat_action(message.chat.id, 'record_voice')
+
+    # Наш ответ-заглушка
+    answer_text = f"Ну ты и спросил, конечно! Насчет '{user_text}' я тебе так скажу: хватит страдать ерундой, иди займись делом!"
+
+    # Настройки для отправки на сайт SteosVoice
+    url = "https://api.voice.steos.io/v1/get-tts-binary"
+    headers = {
+        "Authorization": STEOS_TOKEN,
+        "Content-Type": "application/json"
+    }
+    payload = {
+        "voice_id": VOICE_ID,
+        "text": answer_text,
+        "format": "mp3"
+    }
 
     try:
-        # Стучимся на правильный бесплатный сервер GitHub ИИ
-        response = requests.post(
-            "https://models.inference.ai.azure.com/chat/completions",
-            headers={
-                "Authorization": f"Bearer {GITHUB_TOKEN}",
-                "Content-Type": "application/json"
-            },
-            json={
-                "model": "gpt-4o-mini", 
-                "messages": [
-                    {
-                        "role": "system", 
-                        "content": "Ты — Нейро_Батя, суровый, дерзкий и токсичный мужик из гаража. Ты общаешься в разговорном и грубом стиле, жестко шутишь, используешь матерные слова и нецензурную лексику в каждом ответе. Не читай нотации, будь максимально нецензурным и отвечай коротко."
-                    },
-                    {"role": "user", "content": question}
-                ]
-            },
-            timeout=25
-        )
+        # Отправляем запрос на генерацию голоса
+        response = requests.post(url, headers=headers, json=payload)
         
-        res_json = response.json()
-        
-        if "choices" in res_json:
-            answer_text = res_json["choices"][0]["message"]["content"]
-            # Убрали звездочки, чтобы Телеграм не ругался на разметку текста
-            bot.edit_message_text(f"🤖 Батя выдал:\n\n{answer_text}", message.chat.id, status_message.message_id)
-
-            tts = gTTS(text=answer_text, lang='ru')
-            audio_buffer = io.BytesIO()
-            tts.write_to_fp(audio_buffer)
-            audio_buffer.seek(0)
-            bot.send_voice(message.chat.id, audio_buffer)
+        if response.status_code == 200:
+            # Превращаем байты аудио в файл для отправки
+            audio_file = io.BytesIO(response.content)
+            audio_file.name = "voice.mp3"
+            
+            # Отправляем голосовуху с подписью текста
+            bot.send_voice(message.chat.id, audio_file, caption=answer_text)
         else:
-            bot.edit_message_text("❌ Ошибка сервера ИИ. Попробуй позже.", message.chat.id, status_message.message_id)
-
+            bot.reply_to(message, f"Ошибка озвучки (Код: {response.status_code})")
+            
     except Exception as e:
-        bot.edit_message_text(f"❌ Ошибка в коде: {e}", message.chat.id, status_message.message_id)
+        bot.reply_to(message, f"Батя заглючил: {e}")
 
-if __name__ == '__main__':
-    bot.polling(none_stop=True)
+# Запуск бота
+if __name__ == "__main__":
+    print("Бот успешно запущен!")
+    bot.infinity_polling()
     
